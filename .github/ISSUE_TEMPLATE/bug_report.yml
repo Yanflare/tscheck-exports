@@ -1,0 +1,33 @@
+name: Bug Report
+description: Something isn't working correctly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time to file a bug report."
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Minimal tsconfig + source to reproduce
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: tscheck-exports version
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+    validations:
+      required: true

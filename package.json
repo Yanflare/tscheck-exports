@@ -1,0 +1,59 @@
+{
+  "name": "tscheck-exports",
+  "version": "0.1.0",
+  "description": "Find unused TypeScript exports. Zero-config CI integration with JSON output and auto-fix.",
+  "keywords": [
+    "typescript",
+    "unused-exports",
+    "dead-code",
+    "ci",
+    "cli",
+    "ts-morph"
+  ],
+  "homepage": "https://github.com/Yanflare/tscheck-exports#readme",
+  "bugs": {
+    "url": "https://github.com/Yanflare/tscheck-exports/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yanflare/tscheck-exports.git"
+  },
+  "license": "MIT",
+  "author": "KikiDev <yanakiewkr@gmail.com>",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "tscheck-exports": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tests",
+    "lint:fix": "biome check --write src tests",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "ts-morph": "^23.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
