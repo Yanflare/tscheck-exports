@@ -1,3 +1,4 @@
+import { writeFileSync } from "node:fs";
 import { minimatch } from "minimatch";
 import { Node, Project, type SourceFile, SyntaxKind } from "ts-morph";
 import type { ScanOptions, ScanResult, UnusedExport } from "./types.js";
@@ -60,6 +61,7 @@ export function scan(options: ScanOptions): ScanResult {
     }
 
     const exports = sourceFile.getExportedDeclarations();
+    const fixRanges: [number, number][] = [];
 
     for (const [name, declarations] of exports) {
       if (name === "default") continue;
@@ -76,14 +78,22 @@ export function scan(options: ScanOptions): ScanResult {
         });
 
         if (options.fix) {
-          removeExportKeyword(sourceFile, name);
+          const range = getExportKeywordRange(sourceFile, declaration);
+          if (range) fixRanges.push(range);
         }
       }
     }
-  }
 
-  if (options.fix) {
-    project.saveSync();
+    // Apply all removals for this file at once, highest offset first,
+    // so each splice does not invalidate earlier positions.
+    if (fixRanges.length > 0) {
+      fixRanges.sort((a, b) => b[0] - a[0]);
+      let text = sourceFile.getFullText();
+      for (const [start, end] of fixRanges) {
+        text = text.slice(0, start) + text.slice(end);
+      }
+      writeFileSync(filePath, text, "utf8");
+    }
   }
 
   return {
@@ -93,24 +103,22 @@ export function scan(options: ScanOptions): ScanResult {
   };
 }
 
-function removeExportKeyword(sourceFile: SourceFile, exportName: string): void {
-  const exports = sourceFile.getExportedDeclarations();
-  const declarations = exports.get(exportName);
-  if (!declarations) return;
+function getExportKeywordRange(sourceFile: SourceFile, decl: Node): [number, number] | null {
+  const parent = decl.getParent();
+  if (!parent) return null;
 
-  for (const decl of declarations) {
-    const parent = decl.getParent();
-    if (!parent) continue;
+  const statementNode =
+    parent.getKind() === SyntaxKind.VariableDeclarationList ? parent.getParent() : decl;
+  if (!statementNode) return null;
 
-    const target =
-      parent.getKind() === SyntaxKind.VariableDeclarationList ? parent.getParent() : parent;
+  const syntaxList = statementNode.getChildren().find((c) => c.getKindName() === "SyntaxList");
+  const exportKeyword = syntaxList
+    ?.getChildren()
+    .find((c) => c.getKind() === SyntaxKind.ExportKeyword);
+  if (!exportKeyword) return null;
 
-    if (!target) continue;
-
-    const exportKeyword = target
-      .getChildren()
-      .find((c) => c.getKind() === SyntaxKind.ExportKeyword);
-
-    exportKeyword?.replaceWithText("");
-  }
+  const start = exportKeyword.getStart();
+  const end = exportKeyword.getEnd();
+  const trailingSpace = sourceFile.getFullText()[end] === " " ? 1 : 0;
+  return [start, end + trailingSpace];
 }
